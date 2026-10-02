@@ -17,6 +17,9 @@ run_psql < supabase/tests/rls_negative.sql
 echo "[db] sequential integrity suite"
 run_psql < supabase/tests/integrity.sql
 
+echo "[db] analytics funnel/dedupe/export suite"
+run_psql < supabase/tests/analytics.sql
+
 echo "[db] prepare real concurrency fixture"
 run_psql <<'SQL'
 insert into public.profiles(id,email,display_name,role)
@@ -102,4 +105,4 @@ delete from public.profiles
 where id='dddddddd-dddd-dddd-dddd-dddddddddddd';
 SQL
 
-echo "[db] PASS live local RLS/AuthZ/Storage + concurrency integrity"
+echo "[db] PASS live local RLS/AuthZ/Storage + analytics + concurrency integrity"

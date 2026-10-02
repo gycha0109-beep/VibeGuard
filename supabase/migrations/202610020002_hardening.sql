@@ -180,37 +180,62 @@ returns table(stage_order integer, event_name text, sessions bigint, conversion_
 language plpgsql
 security definer
 set search_path = public, pg_catalog
-as $$
+as $funnel$
 begin
-  if not private.current_user_is_admin() then raise exception 'forbidden' using errcode = '42501'; end if;
+  if not private.current_user_is_admin() then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
   return query
-  with stages(stage_order,event_name) as (
-    values
-      (1,'content_viewed'::text),
-      (2,'edit_started'::text),
-      (3,'edit_completed'::text),
-      (4,'vote_started'::text),
-      (5,'vote_submitted'::text),
-      (6,'result_viewed'::text)
-  ), counts as (
-    select s.stage_order, s.event_name, count(distinct e.session_id)::bigint as sessions
-    from stages s
-    left join public.user_events e on e.event_name = s.event_name
-      and e.occurred_at >= p_from and e.occurred_at < p_to and e.session_id is not null
-    group by s.stage_order, s.event_name
-  ), with_prev as (
+  with session_times as (
+    select
+      e.session_id,
+      min(e.occurred_at) filter (where e.event_name = 'content_viewed') as t1,
+      min(e.occurred_at) filter (where e.event_name = 'edit_started') as t2,
+      min(e.occurred_at) filter (where e.event_name = 'edit_completed') as t3,
+      min(e.occurred_at) filter (where e.event_name = 'vote_started') as t4,
+      min(e.occurred_at) filter (where e.event_name = 'vote_submitted') as t5,
+      min(e.occurred_at) filter (where e.event_name = 'result_viewed') as t6
+    from public.user_events e
+    where e.occurred_at >= p_from
+      and e.occurred_at < p_to
+      and e.session_id is not null
+    group by e.session_id
+  ),
+  counts(stage_order,event_name,sessions) as (
+    select 1, 'content_viewed'::text, count(*) filter (where t1 is not null)::bigint from session_times
+    union all
+    select 2, 'edit_started'::text, count(*) filter (where t1 is not null and t2 >= t1)::bigint from session_times
+    union all
+    select 3, 'edit_completed'::text, count(*) filter (where t1 is not null and t2 >= t1 and t3 >= t2)::bigint from session_times
+    union all
+    select 4, 'vote_started'::text, count(*) filter (where t1 is not null and t2 >= t1 and t3 >= t2 and t4 >= t3)::bigint from session_times
+    union all
+    select 5, 'vote_submitted'::text, count(*) filter (where t1 is not null and t2 >= t1 and t3 >= t2 and t4 >= t3 and t5 >= t4)::bigint from session_times
+    union all
+    select 6, 'result_viewed'::text, count(*) filter (where t1 is not null and t2 >= t1 and t3 >= t2 and t4 >= t3 and t5 >= t4 and t6 >= t5)::bigint from session_times
+  ),
+  with_prev as (
     select c.*, lag(c.sessions) over(order by c.stage_order) as previous_sessions
     from counts c
   )
-  select w.stage_order, w.event_name, w.sessions,
-    case when w.previous_sessions is null then null
-         when w.previous_sessions = 0 then 0
-         else round((w.sessions::numeric / w.previous_sessions::numeric) * 100, 2) end as conversion_from_previous,
-    case when w.previous_sessions is null then null
-         when w.previous_sessions = 0 then 0
-         else round((1 - w.sessions::numeric / w.previous_sessions::numeric) * 100, 2) end as dropoff_from_previous
-  from with_prev w order by w.stage_order;
+  select
+    w.stage_order,
+    w.event_name,
+    w.sessions,
+    case
+      when w.previous_sessions is null then null
+      when w.previous_sessions = 0 then 0
+      else round((w.sessions::numeric / w.previous_sessions::numeric) * 100, 2)
+    end as conversion_from_previous,
+    case
+      when w.previous_sessions is null then null
+      when w.previous_sessions = 0 then 0
+      else round((1 - w.sessions::numeric / w.previous_sessions::numeric) * 100, 2)
+    end as dropoff_from_previous
+  from with_prev w
+  order by w.stage_order;
 end;
-$$;
+$funnel$;
 revoke all on function public.admin_funnel(timestamptz,timestamptz) from public;
 grant execute on function public.admin_funnel(timestamptz,timestamptz) to authenticated;

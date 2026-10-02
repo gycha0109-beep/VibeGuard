@@ -1,13 +1,13 @@
 # Cross-Browser Verification
 
-Configured Playwright projects:
-- `desktop-chromium`: Desktop Chrome profile.
-- `webkit-engine`: Desktop Safari device profile on Playwright WebKit.
-- `android-chromium-emulation`: Pixel 7 profile on Chromium.
+GitHub Actions run #17 executed the production build under all configured Playwright projects and passed the core flow, duplicate-request API check and forged-admin-header negative test.
 
-Claim boundary:
-- A WebKit automation pass is **not** labeled “real iPhone Safari PASS”.
-- Pixel/Chromium emulation is **not** labeled “physical Android Chrome PASS”.
-- Physical-device testing remains an explicit production gap unless separately performed and evidenced.
+| Project | Automated result | Claim boundary |
+|---|---|---|
+| Desktop Chromium | PASS | browser-engine automation |
+| WebKit / Desktop Safari profile | PASS | not a physical iPhone Safari claim |
+| Pixel 7 / Chromium emulation | PASS | not a physical Android hardware claim |
 
-Current status: configuration is wired into GitHub Actions; CI execution evidence determines PASS/FAIL.
+The core flow also asserts browser console errors + uncaught page errors = 0 and attaches screenshots to the Playwright report.
+
+Physical-device testing remains an explicit production gap unless separately performed and evidenced.
