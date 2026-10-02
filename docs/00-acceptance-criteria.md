@@ -11,7 +11,8 @@ The synthetic portfolio is derived from the external brief but uses no client co
 | SEC-005 | Secrets | service-role credential is server-only and no NEXT_PUBLIC service-role variable exists | secret scan + code review test |
 | SEC-006 | RLS | admin_notes restricted to admin boundary | automated negative DB test |
 | SEC-007 | RPC | privileged export/funnel RPC checks caller role | RPC test |
-| SEC-008 | Storage | content image read/write/delete boundaries are explicit | policy test + production gap note |
+| SEC-008 | Storage | content image read/write/delete boundaries are explicit | live local policy test + production gap note |
+| SEC-009 | AuthZ | authenticated user cannot self-promote profile role or alter privileged identity fields | DB negative test + trigger contract |
 | INT-001 | Integrity | DB invariant prevents >1 vote per poll/user | unique constraint + DB test |
 | INT-002 | Integrity | rapid clicks/retries/two-tab duplicate requests result in one row | concurrency test |
 | INT-003 | Integrity | vote insert + aggregate update have one transaction boundary | RPC/transaction test |

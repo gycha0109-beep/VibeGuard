@@ -26,6 +26,7 @@ function evaluate(read) {
     "SEC-005": !/NEXT_PUBLIC_.*SERVICE_ROLE/.test(env),
     "SEC-007": /admin_export_events[\s\S]*current_user_is_admin/.test(hardening),
     "SEC-008": /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/.test(hardening),
+    "SEC-009": /protect_profile_privileged_fields[\s\S]*privileged profile fields are immutable/.test(hardening),
     "INT-001": /unique\s*\(poll_id, user_id\)/i.test(combinedSql)
   };
 }

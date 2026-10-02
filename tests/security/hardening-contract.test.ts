@@ -25,6 +25,10 @@ describe("hardening contracts", () => {
   it("SEC-008 scopes storage write paths to auth.uid", () => {
     expect(hardening).toContain("storage.foldername(name))[1] = auth.uid()::text");
   });
+  it("SEC-009 blocks self-service mutation of privileged profile fields", () => {
+    expect(hardening).toContain("protect_profile_privileged_fields");
+    expect(hardening).toContain("privileged profile fields are immutable");
+  });
   it("INT-001 enforces poll/user uniqueness in the database", () => {
     expect(hardening).toMatch(/unique\s*\(poll_id, user_id\)/i);
   });

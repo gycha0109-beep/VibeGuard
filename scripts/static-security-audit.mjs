@@ -13,6 +13,7 @@ const checks = [
   ["SEC-005 no public service-role env", /NEXT_PUBLIC_.*SERVICE_ROLE/, files.env, true],
   ["SEC-007 admin-gated export", /admin_export_events[\s\S]*current_user_is_admin/, files.hardening],
   ["SEC-008 storage owner path", /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/, files.hardening],
+  ["SEC-009 self role escalation guard", /protect_profile_privileged_fields[\s\S]*privileged profile fields are immutable/, files.hardening],
   ["INT-001 DB unique vote invariant", /unique\s*\(poll_id, user_id\)/i, files.hardening],
   ["INT-003 vote route ignores request userId", /body\.userId/, files.vote, true]
 ];

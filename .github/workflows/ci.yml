@@ -4,6 +4,7 @@ on:
   pull_request:
 permissions:
   contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -34,3 +35,19 @@ jobs:
           path: |
             playwright-report/
             test-results/
+
+  supabase-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3.0.1
+        with:
+          version: 2.119.0
+      - name: Start disposable Supabase stack and apply migrations
+        run: supabase start
+      - name: Run live local RLS/AuthZ/Storage/concurrency verification
+        run: bash scripts/run-supabase-db-tests.sh
+      - name: Stop disposable Supabase stack
+        if: always()
+        run: supabase stop --no-backup

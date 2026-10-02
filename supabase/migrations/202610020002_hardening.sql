@@ -32,8 +32,43 @@ create policy "profiles_update_self_or_admin" on public.profiles for update to a
 using (auth.uid() = id or private.current_user_is_admin())
 with check (auth.uid() = id or private.current_user_is_admin());
 
-create policy "contents_select_visible" on public.contents for select
-using (status = 'published' or owner_id = auth.uid() or private.current_user_is_admin());
+-- SEC-009: RLS controls rows, not privileged columns. Prevent a normal user
+-- from self-promoting role/email while still allowing profile self-service.
+create or replace function private.protect_profile_privileged_fields()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, private, pg_catalog
+as $
+begin
+  if current_user in ('postgres', 'service_role') or private.current_user_is_admin() then
+    return new;
+  end if;
+
+  if auth.uid() = old.id
+     and new.role is not distinct from old.role
+     and new.email is not distinct from old.email then
+    return new;
+  end if;
+
+  raise exception 'privileged profile fields are immutable'
+    using errcode = '42501';
+end;
+$;
+revoke all on function private.protect_profile_privileged_fields() from public;
+grant execute on function private.protect_profile_privileged_fields() to authenticated;
+
+drop trigger if exists protect_profile_privileged_fields on public.profiles;
+create trigger protect_profile_privileged_fields
+before update on public.profiles
+for each row execute function private.protect_profile_privileged_fields();
+
+-- Public content visibility is separated from authenticated owner/admin access so
+-- anonymous reads never need EXECUTE permission on the private admin helper.
+create policy "contents_select_published" on public.contents for select
+using (status = 'published');
+create policy "contents_select_owner_or_admin" on public.contents for select to authenticated
+using (owner_id = auth.uid() or private.current_user_is_admin());
 create policy "contents_insert_owner" on public.contents for insert to authenticated
 with check (owner_id = auth.uid() or private.current_user_is_admin());
 create policy "contents_update_owner_or_admin" on public.contents for update to authenticated
