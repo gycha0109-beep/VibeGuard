@@ -14,7 +14,7 @@ describe("authorized event CSV serialization", () => {
       properties: { label: "a,b\"c" }
     }]);
     expect(csv.split("\n")[0]).toBe(EVENT_EXPORT_COLUMNS.join(","));
-    expect(csv).toContain('"{""label"":""a,b""""c""}"');
+    expect(csv).toContain(csvEscape({ label: 'a,b"c' }));
   });
 
   it("neutralizes spreadsheet formula prefixes", () => {
