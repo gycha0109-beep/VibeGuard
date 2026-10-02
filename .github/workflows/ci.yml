@@ -57,3 +57,32 @@ jobs:
       - name: Stop disposable Supabase stack
         if: always()
         run: supabase stop --no-backup
+
+
+  pin-lockfile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+    needs: [verify, supabase-policy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate exact dependency lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Persist lockfile once
+        shell: bash
+        run: |
+          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            echo "package-lock.json is already tracked"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: pin dependency lockfile [skip ci]"
+          git push origin HEAD:main
