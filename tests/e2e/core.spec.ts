@@ -9,13 +9,13 @@ test("BROWSER core hardened flow has no browser errors", async ({ page }, testIn
   await expect(page.getByRole("heading", { name: "오늘의 이미지" })).toBeVisible();
   await expect(page.locator("img")).toHaveCount(3);
 
-  const vote = page.getByRole("button", { name: "좋아요 투표" }).first();
-  await vote.click();
-  await expect(vote).toHaveText("투표 완료");
+  const firstCard = page.locator("article").first();
+  await firstCard.getByRole("button", { name: "좋아요 투표" }).click();
+  await expect(firstCard.getByRole("button", { name: "투표 완료" })).toBeVisible();
 
   await testInfo.attach("contents-hardened", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
 
-  await page.getByRole("link", { name: "편집 참여" }).first().click();
+  await firstCard.getByRole("link", { name: "편집 참여" }).click();
   await expect(page.getByRole("heading", { name: "캡션 편집" })).toBeVisible();
   await page.getByRole("textbox").fill("regression evidence");
   await page.getByRole("button", { name: "참여 완료" }).click();
