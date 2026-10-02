@@ -8,9 +8,19 @@ VibeGuard preserves both sides of the work:
 
 No client source code, credentials, or production data are used.
 
+## V2 portfolio evidence reset
+
+The original intentionally vulnerable baseline is now treated as legacy harness work, not as independent portfolio provenance. V2 uses an isolated generation branch and a separately frozen AI-generated application before any audit begins. See:
+
+- `docs/11-case-study-reset-v2.md`
+- `docs/12-client-brief-v2.md`
+- `docs/13-independent-generation-protocol-v2.md`
+- `docs/14-audit-plan-v2.md`
+
 ## Evidence-first repository
 
-- **`baseline-ai-generated`** — intentionally vulnerable baseline preserved before remediation.
+- **`baseline-ai-generated`** — legacy V1 harness; excluded from V2 provenance claims.
+- **`baseline-v2-generated`** — reserved immutable tag for the independently generated V2 baseline after the functional-only generation gate.
 - **`hardened-release`** — immutable completion marker created by CI only after the closure commit passes both application/browser and live local Supabase jobs.
 - `docs/00-acceptance-criteria.md` — requirement → executable evidence map.
 - `supabase/migrations/` — baseline, hardening, then final RPC-only write boundaries.
