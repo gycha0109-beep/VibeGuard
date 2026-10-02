@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { currentSessionId, trackClientEvent } from "@/lib/analytics/client-events";
 
 const seed = [
   { id: "11111111-1111-1111-1111-111111111111", title: "City after rain", image: "/content-1.svg" },
@@ -15,13 +16,29 @@ export default function ContentsPage() {
   return (
     <main>
       <div className="eyebrow">Community board · hardened</div>
-      <h1 style={{fontSize:44}}>오늘의 이미지</h1>
+      <h1 style={{ fontSize: 44 }}>오늘의 이미지</h1>
       <p className="meta">로컬 synthetic asset, 명시적 dimensions, responsive sizing으로 외부 이미지 의존성과 layout shift 위험을 줄였습니다.</p>
-      <section className="grid" style={{marginTop:20}}>
+      <section className="grid" style={{ marginTop: 20 }}>
         {items.map((item) => (
           <article className="card" key={item.id}>
-            <Image src={item.image} alt={item.title} width={1200} height={750} sizes="(max-width: 700px) 100vw, 33vw" style={{width:"100%",height:"auto"}} priority={item.id.startsWith("1111")} />
-            <div className="card-body"><strong>{item.title}</strong><p className="meta">참여형 편집 + 투표</p><div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}><VoteButton pollId={item.id} /><Link href={`/edit/${item.id}`}><button className="secondary">편집 참여</button></Link></div></div>
+            <Image
+              src={item.image}
+              alt={item.title}
+              width={1200}
+              height={750}
+              sizes="(max-width: 700px) 100vw, 33vw"
+              style={{ width: "100%", height: "auto" }}
+              priority={item.id.startsWith("1111")}
+              onLoad={() => void trackClientEvent("content_viewed", item.id).catch(() => undefined)}
+            />
+            <div className="card-body">
+              <strong>{item.title}</strong>
+              <p className="meta">참여형 편집 + 투표</p>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <VoteButton pollId={item.id} />
+                <Link href={`/edit/${item.id}`}><button className="secondary">편집 참여</button></Link>
+              </div>
+            </div>
           </article>
         ))}
       </section>
@@ -29,21 +46,38 @@ export default function ContentsPage() {
   );
 }
 
-function getSessionId() {
-  const existing = sessionStorage.getItem("vg-session");
-  if (existing) return existing;
-  const created = crypto.randomUUID();
-  sessionStorage.setItem("vg-session", created);
-  return created;
-}
-
 function VoteButton({ pollId }: { pollId: string }) {
-  const [state, setState] = useState<"idle"|"saving"|"done"|"error">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [count, setCount] = useState<number | null>(null);
+
   async function vote() {
     if (state === "saving" || state === "done") return;
     setState("saving");
-    const response = await fetch("/api/vote", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ pollId, option: "like", sessionId: getSessionId() }) });
-    setState(response.ok ? "done" : "error");
+    void trackClientEvent("vote_started", pollId).catch(() => undefined);
+
+    const response = await fetch("/api/vote", {
+      method: "POST",
+      headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ pollId, option: "like", sessionId: currentSessionId() })
+    });
+    const payload = await response.json().catch(() => null) as { count?: number } | null;
+    if (!response.ok) {
+      setState("error");
+      return;
+    }
+
+    setCount(typeof payload?.count === "number" ? payload.count : null);
+    setState("done");
+    void trackClientEvent("result_viewed", pollId).catch(() => undefined);
   }
-  return <><button disabled={state === "saving" || state === "done"} onClick={vote}>{state === "saving" ? "반영 중" : state === "done" ? "투표 완료" : "좋아요 투표"}</button>{state === "error" && <span className="meta">다시 시도해 주세요</span>}</>;
+
+  return (
+    <>
+      <button disabled={state === "saving" || state === "done"} onClick={vote}>
+        {state === "saving" ? "반영 중" : state === "done" ? "투표 완료" : "좋아요 투표"}
+      </button>
+      {state === "done" && count !== null && <span className="meta">현재 {count}표</span>}
+      {state === "error" && <span className="meta">다시 시도해 주세요</span>}
+    </>
+  );
 }

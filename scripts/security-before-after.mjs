@@ -10,24 +10,30 @@ if (!baselineRef) {
 
 const show = (ref, file) => execFileSync("git", ["show", `${ref}:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
 const current = (file) => fs.readFileSync(file, "utf8");
-const stripSqlComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--.*$/gm, "");
+const stripSqlComments = (value) => value.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--.*$/gm, "");
+
+function optional(read, file) {
+  try { return stripSqlComments(read(file)); } catch { return ""; }
+}
 
 function evaluate(read) {
   const baseline = stripSqlComments(read("supabase/migrations/202610020001_baseline.sql"));
-  let hardening = "";
-  try { hardening = stripSqlComments(read("supabase/migrations/202610020002_hardening.sql")); } catch {}
+  const hardening = optional(read, "supabase/migrations/202610020002_hardening.sql");
+  const boundary = optional(read, "supabase/migrations/202610020003_final_boundaries.sql");
   const admin = read("app/api/admin/users/route.ts");
   const env = read(".env.example");
-  const combinedSql = `${baseline}\n${hardening}`;
+  const combinedSql = `${baseline}\n${hardening}\n${boundary}`;
   return {
     "SEC-001": /profiles_select_self_or_admin[\s\S]*auth\.uid\(\) = id/.test(hardening) && /drop policy if exists "baseline_profiles_read_all"/.test(hardening),
     "SEC-002": /profiles_update_self_or_admin[\s\S]*auth\.uid\(\) = id/.test(hardening) && /drop policy if exists "baseline_profiles_update_all"/.test(hardening),
     "SEC-003": !/x-role/.test(admin) && /requireAdmin/.test(admin),
     "SEC-005": !/NEXT_PUBLIC_.*SERVICE_ROLE/.test(env),
-    "SEC-007": /admin_export_events[\s\S]*current_user_is_admin/.test(hardening),
+    "SEC-007": /admin_export_events[\s\S]*current_user_is_admin/.test(hardening + boundary),
     "SEC-008": /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/.test(hardening),
     "SEC-009": /protect_profile_privileged_fields[\s\S]*privileged profile fields are immutable/.test(hardening),
-    "INT-001": /unique\s*\(poll_id, user_id\)/i.test(combinedSql)
+    "SEC-010": /revoke insert, update, delete on table public\.user_events from anon, authenticated/i.test(boundary) && /record_event/.test(boundary),
+    "INT-001": /unique\s*\(poll_id, user_id\)/i.test(combinedSql),
+    "INT-004": /revoke insert, update, delete on table public\.votes from anon, authenticated/i.test(boundary)
   };
 }
 
@@ -35,7 +41,7 @@ const before = evaluate((file) => show(baselineRef, file));
 const after = evaluate(current);
 const summary = {
   generated_at: new Date().toISOString(),
-  method: "source-and-migration-contract; not a substitute for live Supabase RLS execution",
+  method: "source-and-migration-contract; live Supabase execution is verified separately",
   baseline_ref: baselineRef,
   before,
   after,

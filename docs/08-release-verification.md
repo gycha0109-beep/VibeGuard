@@ -1,31 +1,26 @@
 # Release Verification
 
-## Current automated gate state
+## Completion rule
 
-GitHub Actions run **#17** (`36955921182`) on commit `b6dd513dbb28fc9e6d89ec94c1297e75fe597c9a` established the first combined green security/integrity/browser gate.
+`hardened-release` is the immutable completion marker. The workflow creates that tag **only** on the closure commit after both jobs succeed:
 
-| Gate | Status |
-|---|---|
-| static security source/migration contract | PASS (SEC-001/002/003/005/007/008/009 + INT-001 contract) |
-| baseline → hardened source evidence | PASS (0/8 → 8/8) |
-| disposable local Supabase migrations | PASS |
-| live local RLS/AuthZ negative suite | PASS |
-| live local Storage owner/cross-user boundary | PASS |
-| sequential duplicate vote | PASS |
-| 20-session concurrent duplicate vote | PASS: durable vote=1, aggregate=1, canonical event=1 |
-| TypeScript | PASS |
-| ESLint | PASS |
-| Vitest security/integrity | PASS |
-| Next.js production build | PASS |
-| Playwright Desktop Chromium | PASS |
-| Playwright WebKit engine | PASS |
-| Playwright Android-like Chromium | PASS |
-| browser console/page errors in core flow | PASS: 0 |
-| hosted Supabase production/staging project | NOT CLAIMED |
-| physical iPhone / Android devices | NOT CLAIMED |
+1. `verify` — lockfile install, static before/after gates, TypeScript, ESLint, Vitest, production build, Chromium/WebKit/Android-emulation Playwright.
+2. `supabase-policy` — fresh local Supabase migrations plus live RLS/AuthZ/Storage/event-RPC/analytics/concurrency verification.
 
-Analytics live SQL and performance metrics are being promoted into the same release gate next; the repository must not use the term `production-ready` until the complete acceptance set is green.
+If either job fails, the tag job is skipped.
 
-## Baseline failure preservation
+## Verified evidence before closure
 
-The intentionally failing baseline definitions are preserved under `evidence/before/test-definitions/` and the Git ref `baseline-ai-generated`. They are deliberately excluded from the hardened active suite.
+GitHub Actions run #19 (`36960443076`) was fully green after analytics/performance integration:
+
+- TypeScript, ESLint, Vitest, production build: PASS
+- Desktop Chromium / WebKit / Android Chromium emulation: PASS
+- console/page errors in core flow: 0
+- local Supabase RLS/AuthZ/Storage/analytics/20-session duplicate concurrency: PASS
+- performance evidence artifact: PASS
+
+The closure commit additionally removes direct client writes to canonical vote/event tables, adds live negative tests for those boundaries, switches CI to tracked-lockfile `npm ci`, and wires health/readiness plus actual UI funnel events. The `hardened-release` tag is therefore the authoritative final gate rather than run #19.
+
+## Claim boundary
+
+A successful tag certifies the repository's automated acceptance suite. It does **not** claim a hosted production Supabase audit, physical-device Safari/Android QA, or a professional penetration test.

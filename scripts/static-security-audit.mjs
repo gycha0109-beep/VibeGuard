@@ -3,19 +3,24 @@ import fs from "node:fs";
 const read = (file) => fs.readFileSync(file, "utf8");
 const files = {
   hardening: read("supabase/migrations/202610020002_hardening.sql"),
+  boundary: read("supabase/migrations/202610020003_final_boundaries.sql"),
   env: read(".env.example"),
   admin: read("app/api/admin/users/route.ts"),
-  vote: read("app/api/vote/route.ts")
+  vote: read("app/api/vote/route.ts"),
+  events: read("app/api/events/route.ts")
 };
 const checks = [
   ["SEC-001 self-bound profile policy", /profiles_select_self_or_admin[\s\S]*auth\.uid\(\) = id/, files.hardening],
   ["SEC-003 no x-role trust", /x-role/, files.admin, true],
   ["SEC-005 no public service-role env", /NEXT_PUBLIC_.*SERVICE_ROLE/, files.env, true],
-  ["SEC-007 admin-gated export", /admin_export_events[\s\S]*current_user_is_admin/, files.hardening],
+  ["SEC-007 admin-gated export", /admin_export_events[\s\S]*current_user_is_admin/, files.hardening + files.boundary],
   ["SEC-008 storage owner path", /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/, files.hardening],
   ["SEC-009 self role escalation guard", /protect_profile_privileged_fields[\s\S]*privileged profile fields are immutable/, files.hardening],
+  ["SEC-010 event table RPC-only boundary", /revoke insert, update, delete on table public\.user_events from anon, authenticated/i, files.boundary],
+  ["SEC-010 event API uses record_event RPC", /rpc\("record_event"/, files.events],
   ["INT-001 DB unique vote invariant", /unique\s*\(poll_id, user_id\)/i, files.hardening],
-  ["INT-003 vote route ignores request userId", /body\.userId/, files.vote, true]
+  ["INT-003 vote route ignores request userId", /body\.userId/, files.vote, true],
+  ["INT-004 vote table direct INSERT revoked", /revoke insert, update, delete on table public\.votes from anon, authenticated/i, files.boundary]
 ];
 let failed = 0;
 for (const [name, pattern, body, mustBeAbsent = false] of checks) {

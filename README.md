@@ -1,37 +1,61 @@
 # VibeGuard
 
-AI-assisted MVP hardening portfolio for a synthetic Next.js + Supabase image participation/voting service.
+**AI-generated application security hardening + stabilization** case study for a synthetic Next.js + Supabase image participation/voting service.
 
-VibeGuard demonstrates a verifiable remediation flow rather than a security checklist:
+VibeGuard preserves both sides of the work:
 
-`AI-generated baseline → audit → RLS/Auth hardening → integrity remediation → analytics → browser stabilization → regression → release gate`
+`AI-generated baseline → audit → remediation → live DB verification → browser regression → release gate`
 
 No client source code, credentials, or production data are used.
 
-## Repository evidence
+## Evidence-first repository
 
-- `baseline-ai-generated`: intentionally vulnerable baseline ref preserved on GitHub.
-- `main`: hardened work-in-progress.
-- `docs/00-acceptance-criteria.md`: SEC / INT / EVT / PERF / BROWSER / REL acceptance map.
-- `supabase/migrations/202610020002_hardening.sql`: RLS, privileged RPC, storage and DB-invariant remediation.
-- `supabase/tests/`: live/staging RLS-negative and integrity suites.
-- `evidence/`: before/after source-contract evidence.
-- GitHub Actions: secret-free typecheck/lint/tests/build/Chromium/WebKit/mobile-emulation gate.
+- **`baseline-ai-generated`** — intentionally vulnerable baseline preserved before remediation.
+- **`hardened-release`** — immutable completion marker created by CI only after the closure commit passes both application/browser and live local Supabase jobs.
+- `docs/00-acceptance-criteria.md` — requirement → executable evidence map.
+- `supabase/migrations/` — baseline, hardening, then final RPC-only write boundaries.
+- `supabase/tests/` — RLS/AuthZ/Storage, analytics and integrity SQL.
+- `evidence/` — source before/after, live Supabase and browser evidence notes.
+- `.github/workflows/ci.yml` — tracked-lockfile release gate.
 
-## Hardening highlights
+## What is actually hardened
 
-- cross-user profile RLS replaced with `auth.uid()`/admin boundaries
-- forgeable client admin header removed
-- browser-visible service-role pattern removed
-- `UNIQUE (poll_id, user_id)` protects vote integrity
-- vote RPC derives the actor from `auth.uid()` and updates vote/aggregate/event within one DB call
-- event dedupe keys, session funnel/drop-off RPC and authorized CSV export
-- owner-scoped Storage write policies
-- `next/image`, explicit sizing and reduced repeated client work
-- Playwright projects for Desktop Chromium, WebKit engine and Android-like Chromium emulation
+- cross-user profile RLS and admin authorization
+- self-role escalation protection
+- no browser-visible service-role pattern
+- owner-scoped Supabase Storage writes
+- DB-level `UNIQUE (poll_id, user_id)`
+- **RPC-only votes**: clients cannot bypass `submit_vote`; vote + aggregate + canonical event share one DB transaction
+- **RPC-only events**: clients cannot write raw event rows or forge `vote_submitted`; `record_event` validates observational events
+- stable event dedupe, ordered funnel/drop-off, authorized deterministic CSV export with spreadsheet-formula neutralization
+- local synthetic images + `next/image`, no external content-page resource dependency
+- health/readiness endpoints, route error boundary and explicit loading state
+- production-build Playwright across Desktop Chromium, WebKit and Android-like Chromium
+
+## Verification highlights
+
+The pre-closure full run (#19) passed:
+
+- typecheck / lint / Vitest / Next production build
+- all three Playwright projects with zero core-flow browser errors
+- disposable local Supabase migrations, RLS/AuthZ/Storage, analytics and 20-session duplicate concurrency
+- runtime content-page evidence with external resources = 0 and CI-observed CLS = 0 across all configured browser projects
+
+The closure workflow re-runs the suite with `npm ci` from committed `package-lock.json`. Only a successful closure run can create `hardened-release`.
+
+## Local commands
+
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+```
+
+For real PostgreSQL/RLS/Storage evidence, use the Supabase CLI/Docker path documented by `scripts/run-supabase-db-tests.sh`.
 
 ## Claim boundary
 
-The source-contract security gate currently has hardened checks authored and passing in local static evidence. A real Supabase RLS/Storage PASS is only claimed after the disposable/staging SQL suites execute successfully. WebKit automation is not labeled as a physical iPhone Safari pass, and mobile Chromium emulation is not labeled as physical Android hardware verification.
-
-See `docs/08-release-verification.md` and `docs/10-production-gaps.md` for the current gate state.
+This is a security-hardening portfolio, not a claimed professional penetration test. Local Supabase execution does not prove a hosted project's configuration, WebKit automation is not a physical iPhone claim, and Android emulation is not a physical-device claim. See `docs/10-production-gaps.md`.

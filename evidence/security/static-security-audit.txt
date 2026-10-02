@@ -3,9 +3,13 @@ PASS SEC-003 no x-role trust
 PASS SEC-005 no public service-role env
 PASS SEC-007 admin-gated export
 PASS SEC-008 storage owner path
+PASS SEC-009 self role escalation guard
+PASS SEC-010 event table RPC-only boundary
+PASS SEC-010 event API uses record_event RPC
 PASS INT-001 DB unique vote invariant
 PASS INT-003 vote route ignores request userId
+PASS INT-004 vote table direct INSERT revoked
 {
-  "checks": 7,
+  "checks": 11,
   "failed": 0
 }

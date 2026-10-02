@@ -1,23 +1,34 @@
 # Event Taxonomy
 
-| Event | Required context | Canonical writer | Dedupe rule |
+| Event | Required context | Canonical writer | Dedupe |
 |---|---|---|---|
-| session_started | session_id | client event API | stable dedupe_key per session |
-| content_viewed | session_id, content_id | client event API | stable view token |
-| edit_started | session_id, content_id | client event API | stable per edit session |
-| edit_completed | session_id, content_id | client event API | stable per completion |
-| vote_started | session_id, content_id | client event API | stable per attempt |
-| vote_submitted | session_id, content_id, user_id | DB vote RPC | only when a new vote row is inserted |
-| result_viewed | session_id, content_id | client event API | stable view token |
-| share_clicked | session_id, content_id | client event API | stable click token |
+| session_started | session_id | `record_event` | stable session key |
+| content_viewed | session_id, content_id | `record_event` | stable session/content key |
+| edit_started | session_id, content_id | `record_event` | stable edit-session key |
+| edit_completed | session_id, content_id | `record_event` | stable completion key |
+| vote_started | session_id, content_id | `record_event` | stable poll/session key |
+| vote_submitted | session_id, content_id, user_id | **`submit_vote` only** | tied to unique vote insert |
+| result_viewed | session_id, content_id | `record_event` | stable result/session key |
+| share_clicked | session_id, content_id | `record_event` | stable click/session key |
 
 Common fields: `event_name`, `user_id nullable`, `session_id`, `content_id nullable`, `occurred_at`, `properties jsonb`, `source`, `version`, `dedupe_key`.
 
-## Retry / duplicate policy
-Client observational events send a stable `dedupe_key`; the database has a partial unique index over non-null keys. A duplicate network retry is accepted as already-observed rather than creating a second logical event. `vote_submitted` is canonical: it is written by the same database RPC that creates the unique vote and increments the aggregate, and only when the vote insert wins.
+## Write boundary
+
+`anon` and `authenticated` roles cannot INSERT/UPDATE/DELETE `user_events` directly. Client observational events execute `record_event`, which:
+
+- allowlists event names and excludes canonical `vote_submitted`,
+- derives `user_id` from `auth.uid()` rather than request payload,
+- bounds session/dedupe lengths and properties payload size,
+- validates content visibility/ownership,
+- inserts with the stable dedupe key.
+
+`vote_submitted` is emitted only inside `submit_vote` after a new unique vote wins. Network retries therefore cannot manufacture extra canonical vote events.
 
 ## Funnel
-`admin_funnel(from,to)` returns ordered stages with distinct-session counts, conversion from the prior stage, and drop-off percentage. The RPC is admin-gated.
+
+`admin_funnel(from,to)` counts sessions that reach stages in order and returns conversion/drop-off from the prior stage. Live SQL fixtures verify a `2 → 2 → 1 → 1 → 1 → 1` sequence and the expected 50% stage-3 conversion/drop-off.
 
 ## Export
-`admin_export_events()` is admin-gated. `/api/admin/events/export` converts the authorized result to deterministic CSV and sets `no-store`.
+
+`admin_export_events()` is admin-gated and orders by `occurred_at DESC, id DESC` for deterministic ties. `/api/admin/events/export` applies fixed column ordering, CSV quote escaping, `no-store` and neutralizes spreadsheet formula prefixes.

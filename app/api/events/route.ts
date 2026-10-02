@@ -1,35 +1,57 @@
+import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { recordSyntheticEvent } from "@/lib/synthetic-store";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-const allowed = new Set(["session_started", "content_viewed", "edit_started", "edit_completed", "vote_started", "result_viewed", "share_clicked"]);
+const allowed = new Set(["session_started","content_viewed","edit_started","edit_completed","vote_started","result_viewed","share_clicked"]);
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  if (!allowed.has(body.event_name) || typeof body.session_id !== "string" || typeof body.dedupe_key !== "string") {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "invalid_event" }, { status: 400 });
   }
 
-  const event = {
-    event_name: body.event_name,
-    session_id: body.session_id,
-    content_id: typeof body.content_id === "string" ? body.content_id : null,
-    dedupe_key: body.dedupe_key,
-    properties: typeof body.properties === "object" && body.properties ? body.properties : {},
-    source: "web",
-    version: 1
-  };
+  const eventName = typeof body.event_name === "string" ? body.event_name : "";
+  const sessionId = typeof body.session_id === "string" ? body.session_id : "";
+  const dedupeKey = typeof body.dedupe_key === "string" ? body.dedupe_key : "";
+  const contentId = body.content_id == null ? null : typeof body.content_id === "string" ? body.content_id : "";
+  const properties = body.properties && typeof body.properties === "object" && !Array.isArray(body.properties) ? body.properties : {};
 
-  console.info(JSON.stringify({ type: "user_event_received", event_name: event.event_name, has_content: Boolean(event.content_id) }));
+  if (
+    !allowed.has(eventName) ||
+    sessionId.length < 1 || sessionId.length > 128 ||
+    dedupeKey.length < 1 || dedupeKey.length > 200 ||
+    (contentId !== null && !uuidPattern.test(contentId)) ||
+    (eventName !== "session_started" && contentId === null) ||
+    Buffer.byteLength(JSON.stringify(properties), "utf8") > 4096
+  ) {
+    return NextResponse.json({ error: "invalid_event" }, { status: 400 });
+  }
+
+  console.info(JSON.stringify({ type: "user_event_received", event_name: eventName, has_content: Boolean(contentId) }));
 
   if (process.env.VIBEGUARD_SYNTHETIC_MODE === "true") {
-    const result = recordSyntheticEvent({ eventName: event.event_name, sessionId: event.session_id, contentId: event.content_id ?? undefined, dedupeKey: event.dedupe_key, occurredAt: new Date().toISOString() });
+    const result = recordSyntheticEvent({
+      eventName,
+      sessionId,
+      contentId: contentId ?? undefined,
+      dedupeKey,
+      occurredAt: new Date().toISOString()
+    });
     return NextResponse.json({ accepted: true, duplicate: !result.inserted });
   }
 
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { error } = await supabase.from("user_events").insert({ ...event, user_id: user?.id ?? null });
-  if (error && error.code !== "23505") return NextResponse.json({ error: "event_write_failed" }, { status: 500 });
-  return NextResponse.json({ accepted: true, duplicate: error?.code === "23505" });
+  const { data, error } = await supabase.rpc("record_event", {
+    p_event_name: eventName,
+    p_session_id: sessionId,
+    p_content_id: contentId,
+    p_properties: properties,
+    p_dedupe_key: dedupeKey
+  });
+  if (error) return NextResponse.json({ error: "event_write_failed" }, { status: 400 });
+
+  const result = data as { accepted?: boolean; duplicate?: boolean } | null;
+  return NextResponse.json({ accepted: result?.accepted ?? true, duplicate: result?.duplicate ?? false });
 }

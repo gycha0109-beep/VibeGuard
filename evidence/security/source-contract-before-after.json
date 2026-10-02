@@ -1,10 +1,32 @@
 {
-  "generated_at": "2026-10-02T01:44:09.013Z",
-  "method": "source-and-migration-contract; not a substitute for live Supabase RLS execution",
+  "generated_at": "2026-10-02",
+  "method": "source-and-migration-contract; live Supabase execution is verified separately",
   "baseline_ref": "baseline-ai-generated",
-  "before": {"SEC-001":false,"SEC-002":false,"SEC-003":false,"SEC-005":false,"SEC-007":false,"SEC-008":false,"INT-001":false},
-  "after": {"SEC-001":true,"SEC-002":true,"SEC-003":true,"SEC-005":true,"SEC-007":true,"SEC-008":true,"INT-001":true},
+  "before": {
+    "SEC-001": false,
+    "SEC-002": false,
+    "SEC-003": false,
+    "SEC-005": false,
+    "SEC-007": false,
+    "SEC-008": false,
+    "SEC-009": false,
+    "SEC-010": false,
+    "INT-001": false,
+    "INT-004": false
+  },
+  "after": {
+    "SEC-001": true,
+    "SEC-002": true,
+    "SEC-003": true,
+    "SEC-005": true,
+    "SEC-007": true,
+    "SEC-008": true,
+    "SEC-009": true,
+    "SEC-010": true,
+    "INT-001": true,
+    "INT-004": true
+  },
   "before_pass": 0,
-  "after_pass": 7,
-  "total": 7
+  "after_pass": 10,
+  "total": 10
 }

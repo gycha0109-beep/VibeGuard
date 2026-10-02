@@ -1,0 +1,10 @@
+{
+  "source": "GitHub Actions run 36960443076 (#19)",
+  "commit": "de1ad2bab64b1df56e84c12201d71b374222d3c5",
+  "claim_boundary": "CI-environment evidence, not a universal production benchmark",
+  "projects": [
+    {"browser_project":"desktop-chromium","domContentLoadedMs":80,"loadEventMs":229,"resourceCount":26,"imageResourceCount":2,"externalResourceCount":0,"transferBytesReported":231807,"cls":0},
+    {"browser_project":"webkit-engine","domContentLoadedMs":232,"loadEventMs":233,"resourceCount":11,"imageResourceCount":2,"externalResourceCount":0,"transferBytesReported":147917,"cls":0},
+    {"browser_project":"android-chromium-emulation","domContentLoadedMs":86,"loadEventMs":156,"resourceCount":25,"imageResourceCount":2,"externalResourceCount":0,"transferBytesReported":230878,"cls":0}
+  ]
+}

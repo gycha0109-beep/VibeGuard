@@ -1,18 +1,21 @@
 # Security Remediation
 
-## Closed at source/migration-contract level
-- SEC-001/002: baseline global profile read/update policies are dropped; target policies bind self access to `auth.uid()` and permit admin via a server-controlled helper.
-- SEC-003: admin route no longer consumes a client `x-role` header. It requires an authenticated user and checks the role through the server-side Supabase context.
-- SEC-005: the public-prefixed service-role configuration pattern was removed. No real credential existed in the baseline.
-- SEC-007: the baseline definer export is revoked; replacement admin RPCs perform an explicit admin check.
-- SEC-008: storage writes are scoped to an authenticated user's first path segment, with admin override only in the hardened policy.
-- SEC-009: profile self-update remains available for ordinary fields, while a DB trigger rejects self-service changes to privileged `role` and `email` fields; this closes a row-level-policy-only privilege-escalation gap discovered during live-test design.
-- INT-001: `UNIQUE (poll_id, user_id)` is introduced at the database layer.
-- INT-003: the hardened vote RPC derives the actor from `auth.uid()`, performs insert/aggregate/event work in one database function invocation, and only increments the aggregate for a newly inserted vote.
+## Closed boundaries
+
+- **SEC-001/002** — global profile read/update policies are removed; access is self/admin-bound through `auth.uid()`.
+- **SEC-003** — `x-role` trust is removed; admin privilege is derived from verified server auth + DB role.
+- **SEC-005** — the public-prefixed service-role configuration pattern is removed; the normal runtime requires no service-role credential.
+- **SEC-007** — baseline public definer export is revoked; replacement export/funnel RPCs perform explicit admin checks.
+- **SEC-008** — Storage writes are scoped to the authenticated user's first path segment, with admin override only where intended.
+- **SEC-009** — self-service profile updates cannot mutate privileged `role`/`email` fields.
+- **SEC-010** — client-visible roles have direct `user_events` INSERT/UPDATE/DELETE revoked. Observational events go through an allowlisted, size-bounded `record_event` RPC; canonical `vote_submitted` can only be emitted by the vote transaction.
+- **INT-001/002/003/004** — `(poll_id,user_id)` is unique, `submit_vote` is the privileged transaction boundary, direct vote-table writes are revoked, and live 20-session concurrency verification asserts exactly one durable vote / aggregate increment / canonical event.
 
 ## Evidence levels
-1. `evidence/security/source-contract-before-after.json`: executable source/migration contract shows baseline 0/7 and hardened 7/7.
-2. Vitest contract tests: authored and included in CI.
-3. Live Supabase RLS negative tests: required before claiming Supabase production verification.
 
-This project does not describe the work as penetration testing and does not assign invented CVSS scores.
+1. Source/migration before→after gate: baseline fails the hardened contracts; current source passes them.
+2. Vitest: security, integrity and CSV contracts.
+3. Disposable Supabase local stack: real PostgreSQL RLS, Storage, RPC, analytics and concurrency execution.
+4. Playwright production build: browser regression + forged admin header + HTTP duplicate behavior.
+
+This portfolio is an application-hardening case study, not a claimed professional penetration test. No invented CVSS values are used.

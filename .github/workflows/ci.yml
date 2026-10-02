@@ -2,6 +2,7 @@ name: CI
 on:
   push:
   pull_request:
+
 permissions:
   contents: read
 
@@ -13,13 +14,14 @@ jobs:
       VIBEGUARD_SYNTHETIC_MODE: "true"
       CI: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+          cache: npm
+      - run: npm ci --no-audit --no-fund
       - run: node scripts/static-security-audit.mjs
       - run: node scripts/security-before-after.mjs
       - run: node scripts/performance-before-after.mjs
@@ -29,60 +31,51 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: browser-evidence
           path: |
             playwright-report/
             test-results/
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dependency-lock
-          path: package-lock.json
 
   supabase-policy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v3.0.1
         with:
           version: 2.119.0
       - name: Start disposable Supabase stack and apply migrations
         run: supabase start
-      - name: Run live local RLS/AuthZ/Storage/concurrency verification
+      - name: Run live local RLS/AuthZ/Storage/analytics/concurrency verification
         run: bash scripts/run-supabase-db-tests.sh
       - name: Stop disposable Supabase stack
         if: always()
         run: supabase stop --no-backup
 
-
-  pin-lockfile:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+  release-tag:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: close VibeGuard hardened portfolio'
     needs: [verify, supabase-policy]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Generate exact dependency lock
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Persist lockfile once
+      - name: Create immutable hardened release marker
         shell: bash
         run: |
-          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            echo "package-lock.json is already tracked"
-            exit 0
+          existing="$(git ls-remote --tags origin refs/tags/hardened-release | awk '{print $1}')"
+          if [ -n "$existing" ]; then
+            if [ "$existing" = "$GITHUB_SHA" ]; then
+              echo "hardened-release already points to this commit"
+              exit 0
+            fi
+            echo "hardened-release already exists on a different commit" >&2
+            exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "chore: pin dependency lockfile [skip ci]"
-          git push origin HEAD:main
+          git tag hardened-release "$GITHUB_SHA"
+          git push origin refs/tags/hardened-release
