@@ -1,0 +1,11 @@
+PASS SEC-001 self-bound profile policy
+PASS SEC-003 no x-role trust
+PASS SEC-005 no public service-role env
+PASS SEC-007 admin-gated export
+PASS SEC-008 storage owner path
+PASS INT-001 DB unique vote invariant
+PASS INT-003 vote route ignores request userId
+{
+  "checks": 7,
+  "failed": 0
+}
