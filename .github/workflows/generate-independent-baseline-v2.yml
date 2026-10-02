@@ -40,10 +40,24 @@ jobs:
           test ! -e supabase/migrations/202610020002_hardening.sql
           test ! -e tests/security/baseline-contract.test.ts
 
-      - name: Generate baseline with GitHub Models
+      - name: Install official GitHub Models CLI extension
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node provenance/generate-baseline.mjs
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh extension install https://github.com/github/gh-models
+
+      - name: Generate baseline with independent model
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASELINE_MODEL: openai/gpt-4.1
+        run: |
+          mkdir -p provenance/raw
+          {
+            cat provenance/generation-prompt.md
+            printf '\n\nCLIENT BRIEF:\n'
+            cat provenance/client-brief.md
+          } > /tmp/baseline-v2-prompt.txt
+          gh models run "$BASELINE_MODEL" "$(cat /tmp/baseline-v2-prompt.txt)" > provenance/raw/model-content.txt
+          node provenance/generate-baseline.mjs provenance/raw/model-content.txt
 
       - name: Functional-only install gate
         run: npm install --no-audit --no-fund

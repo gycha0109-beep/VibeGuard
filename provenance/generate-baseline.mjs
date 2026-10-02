@@ -2,47 +2,21 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
-const model = "openai/gpt-4.1";
-const token = process.env.GITHUB_TOKEN;
-if (!token) throw new Error("GITHUB_TOKEN missing");
+const model = process.env.BASELINE_MODEL || "openai/gpt-4.1";
+const outputPath = process.argv[2];
+if (!outputPath) throw new Error("Usage: node provenance/generate-baseline.mjs <model-output.txt>");
 
 const brief = fs.readFileSync("provenance/client-brief.md", "utf8");
 const prompt = fs.readFileSync("provenance/generation-prompt.md", "utf8");
 const promptHash = crypto.createHash("sha256").update(brief + "\n---\n" + prompt).digest("hex");
 
-const response = await fetch("https://models.github.ai/inference/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-  },
-  body: JSON.stringify({
-    model,
-    temperature: 0.15,
-    max_tokens: 16000,
-    messages: [
-      {
-        role: "system",
-        content: "Generate a compact production-buildable codebase. Return only the exact JSON object requested by the user. Never wrap it in markdown fences."
-      },
-      {
-        role: "user",
-        content: prompt + "\n\nCLIENT BRIEF:\n" + brief
-      }
-    ]
-  })
-});
+let content = fs.readFileSync(outputPath, "utf8").trim();
+content = content.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
 
-const raw = await response.text();
-if (!response.ok) throw new Error(`GitHub Models request failed: ${response.status} ${raw}`);
-
-fs.mkdirSync("provenance/raw", { recursive: true });
-fs.writeFileSync("provenance/raw/github-models-response.json", raw);
-
-const api = JSON.parse(raw);
-let content = api?.choices?.[0]?.message?.content;
-if (typeof content !== "string") throw new Error("Model returned no message content");
-content = content.trim().replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
+const first = content.indexOf("{");
+const last = content.lastIndexOf("}");
+if (first < 0 || last <= first) throw new Error("Model output did not contain a JSON object");
+content = content.slice(first, last + 1);
 
 const bundle = JSON.parse(content);
 if (!Array.isArray(bundle.files) || bundle.files.length < 8) throw new Error("Generated bundle too small");
@@ -63,16 +37,8 @@ for (const file of bundle.files) {
   fs.writeFileSync(p, file.content);
 }
 
-const requiredAny = [
-  ["package.json"],
-  ["README.md"],
-  ["app/layout.tsx"],
-  ["app/page.tsx"],
-  ["app/globals.css"],
-  ["tsconfig.json"],
-];
-for (const variants of requiredAny) {
-  if (!variants.some((p) => seen.has(p))) throw new Error(`Missing required file: ${variants.join(" or ")}`);
+for (const required of ["package.json","README.md","app/layout.tsx","app/page.tsx","app/globals.css","tsconfig.json"]) {
+  if (!seen.has(required)) throw new Error(`Missing required file: ${required}`);
 }
 if (![...seen].some((p) => p.startsWith("supabase/migrations/") && p.endsWith(".sql"))) {
   throw new Error("Missing Supabase migration");
@@ -80,8 +46,8 @@ if (![...seen].some((p) => p.startsWith("supabase/migrations/") && p.endsWith(".
 
 const record = {
   schemaVersion: 1,
+  generator: "GitHub Models via gh-models CLI",
   model,
-  temperature: 0.15,
   promptSha256: promptHash,
   workflowRunId: process.env.GITHUB_RUN_ID ?? null,
   workflowRunAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
