@@ -109,7 +109,10 @@ drop function if exists public.submit_vote(uuid,text,text,text);
 create function public.submit_vote(p_poll uuid, p_option text, p_dedupe_key text, p_session_id text)
 returns jsonb
 language plpgsql
-security invoker
+-- The RPC is the transaction boundary for vote + aggregate + canonical event.
+-- It executes with owner privileges so internal aggregate/event writes do not
+-- depend on end-user RLS. The caller identity is still taken only from auth.uid().
+security definer
 set search_path = public, pg_catalog
 as $$
 declare
