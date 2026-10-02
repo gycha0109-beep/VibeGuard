@@ -22,21 +22,11 @@ It does **not** receive:
 - remediation code;
 - Porthub copy.
 
-## Generator
+## Generator status
 
-The GitHub Actions workflow calls GitHub Models using its repository-scoped `GITHUB_TOKEN` and `models: read` permission.
-
-The generated code is returned as a file bundle. The workflow:
-
-1. validates the file paths;
-2. writes the generated files;
-3. records raw model output and generation metadata;
-4. installs dependencies;
-5. requires a successful production build;
-6. commits the untouched generated application plus generated lockfile;
-7. creates the immutable tag `baseline-v2-generated`.
-
-No human code edits are permitted between model output and the frozen baseline tag.
+- GitHub Models: **rejected / unavailable** — service retired 2026-07-30.
+- Current target: **independent external AI coding agent**.
+- Baseline tag `baseline-v2-generated`: **not created yet**.
 
 ## Acceptance gate
 
