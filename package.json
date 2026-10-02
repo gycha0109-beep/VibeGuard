@@ -1,0 +1,37 @@
+{
+  "name": "vibeguard",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:security": "vitest run tests/security",
+    "test:integrity": "vitest run tests/integrity",
+    "test:e2e": "playwright test",
+    "verify:baseline": "node scripts/verify-baseline.mjs",
+    "verify:release": "node scripts/release-gate.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.1",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.6.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.10.0",
+    "eslint-config-next": "16.3.5",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  }
+}
