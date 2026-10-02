@@ -39,7 +39,7 @@ returns trigger
 language plpgsql
 security invoker
 set search_path = public, private, pg_catalog
-as $
+as $profile_guard$
 begin
   if current_user in ('postgres', 'service_role') or private.current_user_is_admin() then
     return new;
@@ -54,7 +54,7 @@ begin
   raise exception 'privileged profile fields are immutable'
     using errcode = '42501';
 end;
-$;
+$profile_guard$;
 revoke all on function private.protect_profile_privileged_fields() from public;
 grant execute on function private.protect_profile_privileged_fields() to authenticated;
 
