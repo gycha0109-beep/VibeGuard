@@ -1,8 +1,5 @@
 -- VibeGuard intentionally vulnerable synthetic baseline.
-create schema if not exists auth;
-create or replace function auth.uid() returns uuid language sql stable as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$$;
+-- This migration targets Supabase and relies on Supabase's built-in auth.uid().
 
 create table if not exists public.profiles (
   id uuid primary key,
@@ -77,7 +74,6 @@ begin
   update public.polls set like_count = like_count + 1 where id = p_poll;
 end;
 $$;
-
 grant execute on function public.baseline_submit_vote(uuid,uuid,text) to public;
 
 create or replace function public.baseline_export_events()

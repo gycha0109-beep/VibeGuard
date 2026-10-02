@@ -4,11 +4,14 @@ export default function HomePage() {
   return (
     <main>
       <section className="hero">
-        <div className="eyebrow">Synthetic AI-generated baseline</div>
-        <h1>Pick. Edit. Vote.</h1>
-        <p>이미지 콘텐츠를 보고 간단한 편집안에 참여한 뒤 투표하는 데모 서비스입니다.</p>
-        <div className="notice"><strong>Portfolio baseline:</strong> 이 단계에는 의도적인 보안·무결성·안정성 결함이 포함되어 있습니다.</div>
-        <Link href="/contents"><button>콘텐츠 보기</button></Link>
+        <div className="eyebrow">AI-generated app hardening case study</div>
+        <h1>VibeGuard</h1>
+        <p>빠르게 제작된 이미지 참여·투표 MVP를 보안, 데이터 무결성, 회귀 검증 관점에서 안정화한 synthetic 포트폴리오입니다.</p>
+        <div className="notice"><strong>Evidence first:</strong> baseline 취약 상태는 <code>baseline-ai-generated</code> ref에 보존하고, main은 remediation과 자동 검증을 누적합니다.</div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+          <Link href="/contents"><button>Hardened demo 보기</button></Link>
+          <Link href="/login"><button className="secondary">로그인</button></Link>
+        </div>
       </section>
     </main>
   );
