@@ -1,0 +1,19 @@
+:root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background:#f6f7fb; color:#131722; }
+* { box-sizing: border-box; }
+body { margin:0; }
+a { color:inherit; text-decoration:none; }
+main { max-width:1080px; margin:0 auto; padding:32px 20px 72px; }
+header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; background:#fff; border-bottom:1px solid #e5e7eb; position:sticky; top:0; z-index:10; }
+nav { display:flex; gap:16px; font-size:14px; }
+.hero { padding:46px 0 24px; }
+.eyebrow { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#687386; font-weight:700; }
+h1 { font-size:clamp(34px,5vw,64px); margin:10px 0 16px; line-height:1; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(26,34,52,.06); }
+.card img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; }
+.card-body { padding:18px; }
+.meta { color:#687386; font-size:13px; }
+button { border:0; border-radius:10px; padding:11px 14px; font-weight:700; cursor:pointer; background:#1b63ff; color:white; }
+button.secondary { background:#eef3ff; color:#1b63ff; }
+.badge { display:inline-flex; padding:5px 8px; border-radius:999px; background:#fff3d6; color:#805b00; font-size:12px; font-weight:700; }
+.notice { padding:14px 16px; border:1px solid #ffd789; background:#fff8e8; border-radius:12px; margin:16px 0; }
