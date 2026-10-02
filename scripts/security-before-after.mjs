@@ -1,5 +1,12 @@
 import fs from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+
+const refExists = (ref) => spawnSync("git", ["rev-parse", "--verify", ref], { stdio: "ignore" }).status === 0;
+const baselineRef = ["baseline-ai-generated", "origin/baseline-ai-generated"].find(refExists);
+if (!baselineRef) {
+  console.error("baseline-ai-generated ref is unavailable; fetch full history before running this evidence gate.");
+  process.exit(1);
+}
 
 const show = (ref, file) => execFileSync("git", ["show", `${ref}:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
 const current = (file) => fs.readFileSync(file, "utf8");
@@ -23,12 +30,12 @@ function evaluate(read) {
   };
 }
 
-const before = evaluate((file) => show("baseline-ai-generated", file));
+const before = evaluate((file) => show(baselineRef, file));
 const after = evaluate(current);
 const summary = {
   generated_at: new Date().toISOString(),
   method: "source-and-migration-contract; not a substitute for live Supabase RLS execution",
-  baseline_ref: "baseline-ai-generated",
+  baseline_ref: baselineRef,
   before,
   after,
   before_pass: Object.values(before).filter(Boolean).length,
