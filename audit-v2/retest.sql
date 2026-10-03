@@ -99,7 +99,7 @@ begin
   end if;
 end $$;
 
-do $
+do $$
 declare
   first_result jsonb;
   second_result jsonb;
@@ -113,11 +113,11 @@ begin
   if coalesce((second_result->>'inserted')::boolean,true) is not false then
     raise exception 'INT-01 retest failed: duplicate submit_vote was not idempotent';
   end if;
-end $;
+end $$;
 
 reset role;
 
-do $
+do $$
 declare
   votes integer;
   events integer;
@@ -136,9 +136,9 @@ begin
   if votes <> 1 or events <> 1 then
     raise exception 'INT-01 retest failed: expected vote=1/event=1, got vote=% event=%', votes, events;
   end if;
-end $;
+end $$;
 
-do $
+do $$
 declare is_public boolean;
 begin
   select public into is_public from storage.buckets where id='entry-images';
