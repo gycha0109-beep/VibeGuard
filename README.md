@@ -1,71 +1,59 @@
 # VibeGuard
 
-**AI-generated application security hardening + stabilization** case study for a synthetic Next.js + Supabase image participation/voting service.
+VibeGuard V2 is an **AI-coded web-service audit and stabilization case study** built around a provenance-first workflow.
 
-VibeGuard preserves both sides of the work:
+A fixed product brief was given to a separate Lovable AI coding agent. The generated application was frozen before any audit began, then inspected independently. Only defects reproduced against that frozen source were recorded as findings.
 
-`AI-generated baseline → audit → remediation → live DB verification → browser regression → release gate`
+`fixed brief → independent AI generation → frozen baseline → audit → remediation → same-path re-test`
 
-No client source code, credentials, or production data are used.
+No customer source code, credentials, production system, or customer data are used.
 
-## V2 portfolio evidence reset
+## V2 source anchors
 
-The original intentionally vulnerable baseline is now treated as legacy harness work, not as independent portfolio provenance. V2 uses an isolated generation branch and a separately frozen AI-generated application before any audit begins. See:
+- Generator: Lovable AI Agent
+- Lovable source: `cc5b0f00b1ca1e23b12c9ec314612b594c0cd9a1`
+- Frozen baseline branch: `baseline-v2-generated`
+- Frozen baseline commit: `2bb435dc89543a487bf151720202fc97d68100d3`
+- Hardened branch: `hardened-v2`
+- Hardened commit: `42a0023fd49372ec0e384b9c5317424081ea24d1`
+- Final V2 re-test run: `37083925427` — DB / lint / test / build PASS
+
+The `main` branch carries the case-study documentation and the older V1 harness history. Use the two V2 branches above when reviewing the generated-before / hardened-after application source.
+
+## Confirmed V2 findings
+
+| ID | Area | Frozen baseline | Hardened re-test |
+|---|---|---|---|
+| EVT-01 | Analytics integrity | vote 0 / forged canonical event 1 | direct canonical-event forgery denied |
+| INT-01 | Vote integrity | vote 1 / matching canonical event 0 | duplicate submits converge to vote 1 / event 1 |
+| STO-01 | Storage privacy | unpublished entry mapped to public bucket | anon hidden / owner access retained |
+| QA-01 | Quality gate | lint: 150 errors | strict lint PASS |
+| QA-02 | Test stability | routing tests: 0/2 | tests PASS / production build PASS |
+
+Details:
+
+- `docs/17-v2-finding-registry.md`
+- `docs/20-v2-remediation-evidence.md`
+
+## Provenance
+
+V2 deliberately separates application generation from auditing.
 
 - `docs/11-case-study-reset-v2.md`
 - `docs/12-client-brief-v2.md`
 - `docs/13-independent-generation-protocol-v2.md`
-- `docs/14-audit-plan-v2.md`
+- `docs/15-generation-provider-record-v2.md`
 
-## Evidence-first repository
+The old `baseline-ai-generated` branch is a **legacy V1 intentionally vulnerable harness** and is excluded from V2 provenance claims.
 
-- **`baseline-ai-generated`** — legacy V1 harness; excluded from V2 provenance claims.
-- **`baseline-v2-generated`** — reserved immutable tag for the independently generated V2 baseline after the functional-only generation gate.
-- **`hardened-release`** — immutable completion marker created by CI only after the closure commit passes both application/browser and live local Supabase jobs.
-- `docs/00-acceptance-criteria.md` — requirement → executable evidence map.
-- `supabase/migrations/` — baseline, hardening, then final RPC-only write boundaries.
-- `supabase/tests/` — RLS/AuthZ/Storage, analytics and integrity SQL.
-- `evidence/` — source before/after, live Supabase and browser evidence notes.
-- `.github/workflows/ci.yml` — tracked-lockfile release gate.
+## Public portfolio
 
-## What is actually hardened
+The Porthub VibeGuard page was rewritten around V2 evidence rather than self-scoring or synthetic before/after claims.
 
-- cross-user profile RLS and admin authorization
-- self-role escalation protection
-- no browser-visible service-role pattern
-- owner-scoped Supabase Storage writes
-- DB-level `UNIQUE (poll_id, user_id)`
-- **RPC-only votes**: clients cannot bypass `submit_vote`; vote + aggregate + canonical event share one DB transaction
-- **RPC-only events**: clients cannot write raw event rows or forge `vote_submitted`; `record_event` validates observational events
-- stable event dedupe, ordered funnel/drop-off, authorized deterministic CSV export with spreadsheet-formula neutralization
-- local synthetic images + `next/image`, no external content-page resource dependency
-- health/readiness endpoints, route error boundary and explicit loading state
-- production-build Playwright across Desktop Chromium, WebKit and Android-like Chromium
-
-## Verification highlights
-
-The pre-closure full run (#19) passed:
-
-- typecheck / lint / Vitest / Next production build
-- all three Playwright projects with zero core-flow browser errors
-- disposable local Supabase migrations, RLS/AuthZ/Storage, analytics and 20-session duplicate concurrency
-- runtime content-page evidence with external resources = 0 and CI-observed CLS = 0 across all configured browser projects
-
-The closure workflow re-runs the suite with `npm ci` from committed `package-lock.json`. Only a successful closure run can create `hardened-release`.
-
-## Local commands
-
-```bash
-npm ci
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run test:e2e
-```
-
-For real PostgreSQL/RLS/Storage evidence, use the Supabase CLI/Docker path documented by `scripts/run-supabase-db-tests.sh`.
+- Porthub commit: `22b59d268ff0d6270d3e2411e47b0e0272d2cb3a`
+- Porthub verification run: `37085387275` — PASS
+- Publication verification: `docs/21-v2-porthub-publication.md`
 
 ## Claim boundary
 
-This is a security-hardening portfolio, not a claimed professional penetration test. Local Supabase execution does not prove a hosted project's configuration, WebKit automation is not a physical iPhone claim, and Android emulation is not a physical-device claim. See `docs/10-production-gaps.md`.
+This is a synthetic methodology case study, not a claimed customer engagement or professional penetration-test certification. Disposable local Supabase verifies the tested database/RLS/Storage behavior; it does not prove a hosted customer's production configuration. Physical-device validation is not claimed.
