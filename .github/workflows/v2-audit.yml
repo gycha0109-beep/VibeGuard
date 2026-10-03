@@ -1,0 +1,27 @@
+name: V2 Baseline Audit
+
+on:
+  push:
+    branches:
+      - audit-v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v3.0.1
+        with:
+          version: 2.119.0
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Reproduce frozen-baseline findings
+        run: bash audit-v2/run.sh
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
