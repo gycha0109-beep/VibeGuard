@@ -138,7 +138,7 @@ begin
   end if;
 end $;
 
-do $$
+do $
 declare is_public boolean;
 begin
   select public into is_public from storage.buckets where id='entry-images';
