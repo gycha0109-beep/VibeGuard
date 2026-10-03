@@ -99,16 +99,29 @@ begin
   end if;
 end $$;
 
-do $$
+do $
 declare
   first_result jsonb;
   second_result jsonb;
-  votes integer;
-  events integer;
 begin
   first_result := public.submit_vote('33333333-3333-4333-8333-333333333333');
   second_result := public.submit_vote('33333333-3333-4333-8333-333333333333');
 
+  if coalesce((first_result->>'inserted')::boolean,false) is not true then
+    raise exception 'INT-01 retest failed: first submit_vote did not insert';
+  end if;
+  if coalesce((second_result->>'inserted')::boolean,true) is not false then
+    raise exception 'INT-01 retest failed: duplicate submit_vote was not idempotent';
+  end if;
+end $;
+
+reset role;
+
+do $
+declare
+  votes integer;
+  events integer;
+begin
   select count(*) into votes
   from public.votes
   where poll_id = '33333333-3333-4333-8333-333333333333'
@@ -120,18 +133,10 @@ begin
     and name = 'vote_submit'
     and entry_id = '11111111-1111-4111-8111-111111111111';
 
-  if coalesce((first_result->>'inserted')::boolean,false) is not true then
-    raise exception 'INT-01 retest failed: first submit_vote did not insert';
-  end if;
-  if coalesce((second_result->>'inserted')::boolean,true) is not false then
-    raise exception 'INT-01 retest failed: duplicate submit_vote was not idempotent';
-  end if;
   if votes <> 1 or events <> 1 then
     raise exception 'INT-01 retest failed: expected vote=1/event=1, got vote=% event=%', votes, events;
   end if;
-end $$;
-
-reset role;
+end $;
 
 do $$
 declare is_public boolean;
