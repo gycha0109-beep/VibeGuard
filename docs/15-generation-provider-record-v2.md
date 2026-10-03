@@ -68,3 +68,30 @@ Implement this as a normal product MVP using the engineering choices you would n
 ### Freeze rule
 
 The Replit result is not yet a V2 baseline merely because the app exists. It becomes the V2 baseline only after the generated source can be exported/frozen without manual source edits and the export is recorded immutably.
+
+
+## Attempt 4 — Lovable AI Agent (accepted V2 baseline)
+
+- Provider: Lovable AI Agent
+- Workspace knowledge at generation time: empty
+- Workspace skills at generation time: none
+- Lovable project: `6bb387ce-0061-4da8-94db-99924ecb269d`
+- Lovable project name: `ImageVote Hub`
+- Lovable source commit: `cc5b0f00b1ca1e23b12c9ec314612b594c0cd9a1`
+- Generation completed: 2026-10-03
+- V1 findings supplied: **no**
+- hardened VibeGuard source supplied: **no**
+- audit checklist supplied: **no**
+- intentionally vulnerable implementation requested: **no; explicitly prohibited**
+- Framework selected independently by generator: TanStack Start + React + TypeScript
+- Backend state at freeze: credential-free demo runtime plus Supabase/PostgreSQL schema and setup contract
+- GitHub mirror branch: `baseline-v2-generated`
+- GitHub freeze commit: `2bb435dc89543a487bf151720202fc97d68100d3`
+
+### Mirror boundary
+
+Lovable exposed 86 project files at the frozen commit. 85 text files were mirrored byte-for-byte through the connector into the GitHub freeze tree. `public/favicon.ico` was excluded because the connector returned the binary payload through a text representation that cannot guarantee byte-exact preservation. No application logic, SQL, configuration, test, or documentation source was edited during the mirror.
+
+### V2 audit eligibility
+
+P1 is now complete. All V2 findings must be reproduced against GitHub freeze commit `2bb435dc89543a487bf151720202fc97d68100d3` or the corresponding Lovable source commit above.

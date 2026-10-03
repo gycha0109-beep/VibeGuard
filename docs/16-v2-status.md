@@ -5,8 +5,8 @@
 | P0 Client brief | COMPLETE | `docs/12-client-brief-v2.md` |
 | P0 Provenance reset | COMPLETE | `docs/11-case-study-reset-v2.md` |
 | P0 Audit separation | COMPLETE | `docs/14-audit-plan-v2.md` |
-| P1 Independent baseline generation | IN PROGRESS — Replit Agent | new independent app is being generated; no baseline frozen yet |
-| P2 Independent audit | NOT STARTED | waits for immutable V2 baseline |
+| P1 Independent baseline generation | COMPLETE | Lovable source cc5b0f00... mirrored at GitHub 2bb435dc... |
+| P2 Independent audit | IN PROGRESS | frozen baseline 2bb435dc... |
 | P3 Remediation | NOT STARTED | waits for confirmed findings |
 | P4 Re-test | NOT STARTED | waits for remediation |
 | P5 Portfolio evidence | NOT STARTED | waits for real V2 evidence |
