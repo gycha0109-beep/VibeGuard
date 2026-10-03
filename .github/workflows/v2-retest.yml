@@ -1,0 +1,40 @@
+name: V2 Remediation Re-test
+
+on:
+  push:
+    branches:
+      - remediation-v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun test
+      - run: bun run build
+
+  db-retest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v3.0.1
+        with:
+          version: 2.119.0
+      - name: Start disposable Supabase
+        run: supabase start
+      - name: Re-test remediated findings
+        run: bash audit-v2/retest.sh
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop --no-backup
