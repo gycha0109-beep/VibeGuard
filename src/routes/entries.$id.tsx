@@ -29,9 +29,16 @@ function EntryPage() {
   const count = votes.filter((v) => v.poll_id === poll?.id).length;
   const voted = !!me && votes.some((v) => v.poll_id === poll?.id && v.user_id === me.id);
   const showResult = voted || (poll && !poll.is_open);
-  useEffect(() => { if (showResult) api.track("result_view", id); }, [showResult, id]);
+  useEffect(() => {
+    if (showResult) api.track("result_view", id);
+  }, [showResult, id]);
 
-  if (!entry || (!entry.published && entry.owner_id !== me?.id)) return <Shell><p>Entry not found.</p></Shell>;
+  if (!entry || (!entry.published && entry.owner_id !== me?.id))
+    return (
+      <Shell>
+        <p>Entry not found.</p>
+      </Shell>
+    );
 
   return (
     <Shell>
@@ -41,7 +48,11 @@ function EntryPage() {
           <h1 className="font-display text-4xl">{entry.title}</h1>
           <p className="text-muted-foreground">{entry.description}</p>
           <p className="text-sm">by {owner?.display_name ?? "unknown"}</p>
-          {me?.id === entry.owner_id && <Link to="/entries/$id/edit" params={{ id }} className="btn-ghost inline-block">Edit entry</Link>}
+          {me?.id === entry.owner_id && (
+            <Link to="/entries/$id/edit" params={{ id }} className="btn-ghost inline-block">
+              Edit entry
+            </Link>
+          )}
           {poll && (
             <div className="card p-5">
               <p className="font-medium">{poll.question}</p>
@@ -49,12 +60,24 @@ function EntryPage() {
               {showResult ? (
                 <div className="mt-4">
                   <div className="font-display text-5xl text-primary">{count}</div>
-                  <div className="text-sm text-muted-foreground">{count === 1 ? "vote" : "votes"} so far{voted && " — including yours"}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {count === 1 ? "vote" : "votes"} so far{voted && " — including yours"}
+                  </div>
                 </div>
               ) : me ? (
-                <button className="btn-primary mt-4" onClick={() => { api.vote(poll.id); api.track("vote_submit", id); }}>♥ Vote</button>
+                <button
+                  className="btn-primary mt-4"
+                  onClick={() => {
+                    api.vote(poll.id);
+                    api.track("vote_submit", id);
+                  }}
+                >
+                  ♥ Vote
+                </button>
               ) : (
-                <Link to="/signin" className="btn-primary mt-4 inline-block">Sign in to vote</Link>
+                <Link to="/signin" className="btn-primary mt-4 inline-block">
+                  Sign in to vote
+                </Link>
               )}
             </div>
           )}

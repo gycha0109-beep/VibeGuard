@@ -19,8 +19,17 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const me = useMe();
-  if (!me) return <Shell><NeedSignIn what="see your profile" /></Shell>;
-  return <Shell><ProfileForm key={me.id} me={me} /></Shell>;
+  if (!me)
+    return (
+      <Shell>
+        <NeedSignIn what="see your profile" />
+      </Shell>
+    );
+  return (
+    <Shell>
+      <ProfileForm key={me.id} me={me} />
+    </Shell>
+  );
 }
 
 function ProfileForm({ me }: { me: Profile }) {
@@ -29,17 +38,49 @@ function ProfileForm({ me }: { me: Profile }) {
   const [saved, setSaved] = useState(false);
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <form className="card space-y-4 p-6" onSubmit={(e) => {
-        e.preventDefault();
-        if (!f.display_name.trim()) return;
-        api.updateProfile({ display_name: f.display_name.trim().slice(0, 60), bio: f.bio.slice(0, 500) });
-        api.track("profile_update"); setSaved(true);
-      }}>
+      <form
+        className="card space-y-4 p-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!f.display_name.trim()) return;
+          api.updateProfile({
+            display_name: f.display_name.trim().slice(0, 60),
+            bio: f.bio.slice(0, 500),
+          });
+          api.track("profile_update");
+          setSaved(true);
+        }}
+      >
         <h1 className="font-display text-3xl">Profile</h1>
-        <p className="text-sm text-muted-foreground">{me.email} · {me.role}</p>
-        <label className="field">Display name<input className="input" maxLength={60} value={f.display_name} onChange={(e) => { setF({ ...f, display_name: e.target.value }); setSaved(false); }} /></label>
-        <label className="field">Bio<textarea className="input min-h-24" maxLength={500} value={f.bio} onChange={(e) => { setF({ ...f, bio: e.target.value }); setSaved(false); }} /></label>
-        <button className="btn-primary">Save</button>{saved && <span className="ml-3 text-sm text-primary">Saved</span>}
+        <p className="text-sm text-muted-foreground">
+          {me.email} · {me.role}
+        </p>
+        <label className="field">
+          Display name
+          <input
+            className="input"
+            maxLength={60}
+            value={f.display_name}
+            onChange={(e) => {
+              setF({ ...f, display_name: e.target.value });
+              setSaved(false);
+            }}
+          />
+        </label>
+        <label className="field">
+          Bio
+          <textarea
+            className="input min-h-24"
+            maxLength={500}
+            value={f.bio}
+            onChange={(e) => {
+              setF({ ...f, bio: e.target.value });
+              setSaved(false);
+            }}
+          />
+        </label>
+        <button className="btn-primary">Save</button>
+        {saved && <span className="ml-3 text-sm text-primary">Saved</span>}
       </form>
       <div className="card p-6">
         <h2 className="font-display text-2xl">My entries</h2>
@@ -47,8 +88,12 @@ function ProfileForm({ me }: { me: Profile }) {
           {mine.length === 0 && <li className="text-muted-foreground">No entries yet.</li>}
           {mine.map((e) => (
             <li key={e.id} className="flex justify-between">
-              <Link to="/entries/$id" params={{ id: e.id }} className="nav-link">{e.title}</Link>
-              <Link to="/entries/$id/edit" params={{ id: e.id }} className="text-sm text-primary">Edit</Link>
+              <Link to="/entries/$id" params={{ id: e.id }} className="nav-link">
+                {e.title}
+              </Link>
+              <Link to="/entries/$id/edit" params={{ id: e.id }} className="text-sm text-primary">
+                Edit
+              </Link>
             </li>
           ))}
         </ul>
